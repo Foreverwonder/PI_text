@@ -23,7 +23,7 @@ public class Pi_Text {
                     String line = sc.nextLine();
                     if ((line.indexOf(_pi_num)) != -1) {
                         System.out.println("第一次找到六位银行卡密码"+_pi_num+"位于圆周率3.1415926.....后第" + (50 * (pi_line - 2) + line.indexOf(_pi_num) + 1) + "位");
-                        System.out.println("该密码及临近数字可见为：\n3.14......"+line);
+                        System.out.println("该密码及临近数字可见为：\n3.14......"+line+"...");
                         break;
                     }
                 }
