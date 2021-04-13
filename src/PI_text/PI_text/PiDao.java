@@ -28,6 +28,10 @@ public class PiDao {
                         break;
                     }
                 }
+                if (sc.hasNextLine()==false){
+                    System.out.println("呜呜呜本机算力有限没找到...(tips:若是超过六位数，找到的概率会大幅下降哦)");
+                }
+//                System.out.println("测试数值"+sc.hasNextLine());==false
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -84,6 +88,8 @@ public class PiDao {
                         System.out.println("该数字及周围数字可见为：\n3.14......" + line + "...");
                         break;
                     }
+                }if (sc.hasNextLine()==false){
+                    System.out.println("呜呜呜本机算力有限没找到...(tips:若是字母编码后超过六位数，找到的概率会大幅下降哦)");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
