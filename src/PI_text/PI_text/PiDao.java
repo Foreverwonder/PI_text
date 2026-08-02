@@ -1,108 +1,101 @@
 package PI_text;
-/*
- * 读取一个text文件并输出
- * */
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Scanner;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * π 数字查找器。
+ *
+ * 数据文件 pi6.txt 格式:第一行 "3.",之后每行 50 位数字。
+ * 本类一次性将全部行读入内存(1412 万字符约 14MB),采用"逐行 + 行间窗口"方式查找:
+ * 每一行除常规 indexOf 外,还会把「当前行尾 + 下一行开头」拼接成一个窗口再查一次,
+ * 从而解决目标数字恰好跨行时的漏查问题。
+ */
 public class PiDao {
-    public void findPiNumber(String _pi_num) {
-//        String filePath = "d:\\pi6.txt";//14million
-//        String filePath = "pi6.txt";//14million
-        String filePath = "pi6.txt";//14million
-        int pi_line = 0;
-        try {
-            FileInputStream inputStream = null;
-            Scanner sc = null;
-            try {
-                inputStream = new FileInputStream(filePath);
-                sc = new Scanner(inputStream, "utf-8");
-                while (sc.hasNextLine()) {
-                    pi_line++;
-                    String line = sc.nextLine();
-                    if ((line.indexOf(_pi_num)) != -1) {
-                        System.out.println("你输入的数字" + _pi_num + "在π3.1415926.....后第" + (50 * (pi_line - 2) + line.indexOf(_pi_num) + 1) + "位找到啦");
-                        System.out.println("该数字及周围数字可见为：\n3.14......" + line + "...");
-                        break;
-                    }
-                }
-                if (sc.hasNextLine()==false){
-                    System.out.println("呜呜呜本机算力有限没找到...(tips:若是超过六位数，找到的概率会大幅下降哦)");
-                }
-//                System.out.println("测试数值"+sc.hasNextLine());==false
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-                if (sc != null) {
-                    sc.close();
+
+    /** 数据行列表:index 0 为 "3.",index 1 起为每行 50 位数字 */
+    private final List<String> rows = new ArrayList<>();
+
+    /** 每行固定位数 */
+    private static final int LINE_WIDTH = 50;
+
+    public PiDao() throws IOException {
+        String filePath = locateDataFile();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (!trimmed.isEmpty()) {
+                    rows.add(trimmed);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        if (rows.isEmpty()) {
+            throw new IOException("pi6.txt 为空或无法读取");
         }
     }
 
-    public void findThreeLetter(String _pi_letter) {
-        String filePath = "pi6.txt";//14million
-        int pi_line = 0;
-        String strIn = _pi_letter;
-        char[] cIn= new char[20];
-        cIn = strIn.toCharArray();
-        String str="";
-//        for (int i = 0; i < strIn.length(); i++) {
-//            System.out.print(cIn[i]);
-//        }
-        for (int i = 0; i < strIn.length(); i++) {
-            if (cIn[i] >= 'a' && cIn[i] <= 'z') {
-//                cOut[i] = (char) ((int) cIn[i] - 96);
-                str+= ((int) cIn[i] - 96);
-//                System.out.println(cOut[i]);
-//                System.out.println((char)((int) cIn[i]-96));
+    /** 查找目标数字串在 π 小数点后的位数(从 1 开始计数),找不到返回 -1 */
+    public long findNumber(String target) {
+        if (target == null || target.isEmpty()) {
+            return -1;
+        }
+        int len = target.length();
 
-            } else if (cIn[i] >= 'A' && cIn[i] <= 'Z') {
-//                cOut[i] = (char) ((int) cIn[i] - 64);
-                str+= ((int) cIn[i] - 64);
-//                System.out.println(cOut[i]);
-//                System.out.println((char)((int) cIn[i]-64));
+        for (int i = 1; i < rows.size(); i++) {
+            String row = rows.get(i);
+
+            // 1) 常规查找:目标完整落在本行内
+            int idx = row.indexOf(target);
+            if (idx != -1) {
+                return (long) (i - 1) * LINE_WIDTH + idx + 1;
+            }
+
+            // 2) 跨行查找:目标可能跨在本行末尾 + 下一行开头
+            if (i + 1 < rows.size() && row.length() >= len - 1) {
+                String next = rows.get(i + 1);
+                String window = row.substring(row.length() - (len - 1)) + next;
+                int widx = window.indexOf(target);
+                if (widx != -1) {
+                    // 窗口起点 = 当前行末尾的 (len-1) 位处
+                    long posInRow = (row.length() - (len - 1)) + widx;
+                    return (long) (i - 1) * LINE_WIDTH + posInRow + 1;
+                }
             }
         }
+        return -1;
+    }
 
-
-        try {
-            String _pi_num=str;
-            FileInputStream inputStream = null;
-            Scanner sc = null;
-            try {
-                inputStream = new FileInputStream(filePath);
-                sc = new Scanner(inputStream, "utf-8");
-                while (sc.hasNextLine()) {
-                    pi_line++;
-                    String line = sc.nextLine();
-                    if ((line.indexOf(_pi_num)) != -1) {
-                        System.out.println("你输入的英文字母--" +_pi_letter+"--按a=1,b=2,c=3..编码成的数字--"+ _pi_num + "--在π里3.1415926.....后第" + (50 * (pi_line - 2) + line.indexOf(_pi_num) + 1) + "位找到啦");
-                        System.out.println("该数字及周围数字可见为：\n3.14......" + line + "...");
-                        break;
-                    }
-                }if (sc.hasNextLine()==false){
-                    System.out.println("呜呜呜本机算力有限没找到...(tips:若是字母编码后超过六位数，找到的概率会大幅下降哦)");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-                if (sc != null) {
-                    sc.close();
-                }
+    /** 字母转数字(a=1,b=2,...,z=26;大小写均可),再复用 findNumber */
+    public long findLetters(String letters) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : letters.toCharArray()) {
+            if (c >= 'a' && c <= 'z') {
+                sb.append(c - 'a' + 1);
+            } else if (c >= 'A' && c <= 'Z') {
+                sb.append(c - 'A' + 1);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+        return findNumber(sb.toString());
+    }
+
+    /** 查找数据文件:优先当前目录,其次 src 子目录(兼容两种运行方式) */
+    private String locateDataFile() {
+        String[] candidates = {
+                "pi6.txt",
+                "src/PI_text/PI_text/pi6.txt"
+        };
+        for (String path : candidates) {
+            if (java.nio.file.Files.exists(java.nio.file.Path.of(path))) {
+                return path;
+            }
+        }
+        return candidates[0];
     }
 }
